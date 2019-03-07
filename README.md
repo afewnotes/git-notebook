@@ -1,2 +1,2 @@
 # git-notebook
-Config for Git stored notebooks 
+Git stored notebooks for [spark-notebook](https://github.com/spark-notebook/spark-notebook)
