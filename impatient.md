@@ -731,6 +731,84 @@ val root2 = XML.load(new FileInputStream("myfile.xml"))
 val root3 = XML.load(new InputStreamReader(
 new FileInputStream("myfile.xml"), "UTF-8"))
 val root4 = XML.load(new URL("http://horstmann.com/index.html"))
+
+XML.save("myfile.xml", root)
 ```
 
 ## Future
+- [`scala.concurrent.Future`](https://www.scala-lang.org/api/current/scala/concurrent/Future.html) 异步执行代码块
+
+```scala
+import java.time._
+import scala.concurrent._
+import ExecutionContext.Implicits.global // 全局线程池
+Future {
+    Thread.sleep(10000)
+    println(s"This is the future at ${LocalTime.now}")
+}
+println(s"This is the present at ${LocalTime.now}")
+```
+
+
+- 监听结果（阻塞）
+
+```scala
+import scala.concurrent.duration._
+val f = Future { Thread.sleep(10000); 42 }
+val result = Await.result(f, 10.seconds) //阻塞10s
+
+val f = Future { ... }
+Await.ready(f, 10.seconds)
+val Some(t): Option[Try[T]] = f.value
+
+t match {
+    case Success(v) => println(s"The answer is $v")
+    case Failure(ex) => println(ex.getMessage)
+}
+```
+> ready() 
+> - 到达等待时间无结果时，会抛出异常 `TimeoutException`
+> - 任务抛出的异常时，result() 会再次抛出异常， ready() 可获取结果
+
+
+- 回调
+
+```scala
+val f = Future { 
+    Thread.sleep(10000)
+    if (random() < 0.5) throw new Exception
+    42
+}
+f.onComplete {
+    case Success(v) => println(s"The answer is $v")
+    case Failure(ex) => println(ex.getMessage)
+}
+```
+
+- 问题：1.回调地狱；2.执行顺序无法预知
+
+```scala
+val future1 = Future { getData1() }
+val future2 = Future { getData2() }
+future1 onComplete {
+    case Success(n1) =>
+        future2 onComplete {
+            case Success(n2) => {
+                val n = n1 + n2
+                    println(s"Result: $n")
+                }
+            case Failure(ex) => ...
+        }
+    case Failure(ex) => ...
+}
+```
+
+> 将 Future 看作集合
+
+```scala
+// val 会立即执行，def 调用时执行
+val future1 = Future { getData1() }
+val future2 = Future { getData2() }
+// 都获取到结果时，才会进行计算
+val combined = for (n1 <- future1; n2 <- future2) yield n1 + n2
+```
