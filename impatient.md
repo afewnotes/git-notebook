@@ -677,8 +677,60 @@
 ## XML
 
 * 直接在代码中使用 XML 字面量
+
   ```scala
   val doc: Elem = <html><head><title>Test</title></head><body>test</body></html>
   val items: NodeBuffer = <li>item1</li><li>item2</li><li>item1</li><li>item2</li>
   ```
+  
 * `Scala` 中的 `Node` 与 `DOM` 不同，不包含父节点信息
+* 层级
+![](imgs/xml.png)
+* 操作
+![](imgs/Elem.png)
+
+```scala
+// 类 XPath
+val list = <dl><dt>Java</dt><dd>Gosling</dd><dt>Scala</dt><dd>Odersky</dd></dl>
+val languages = list \ "dt"
+
+// 修改元素
+val list = <ul><li>Fred</li><li>Wilma</li></ul>
+val list2 = list.copy(label = "ol")
+// 增加子元素
+list.copy(child = list.child ++ <li>Another item</li>)
+// 增加属性
+val image = <img src="hamster.jpg"/>
+val image2 = image % Attribute(null, "alt", "An image of a hamster", Null)
+```
+
+* 内嵌表达式，在XML中直接写 Scala 代码块
+
+```scala
+<ul><li>{items(0)}</li><li>{items(1)}</li></ul>
+<ul>{for (i <- items) yield <li>{i}</li>}</ul>
+<img src={makeURL(fileName)}/> // 注意不需要双引号
+// 非常规类型
+val js = <script><![CDATA[if (temp < 0) alert("Cold!")]]></script>
+```
+
+* 模式匹配
+
+```scala
+case <li>{Text(item)}</li> => item
+case <li>{children @ _*}</li> => for (c <- children) yield c
+```
+> 只能使用单个 `Node` 进行匹配
+
+* 加载、保存文件
+
+```scala
+import scala.xml.XML
+val root = XML.loadFile("myfile.xml")
+val root2 = XML.load(new FileInputStream("myfile.xml"))
+val root3 = XML.load(new InputStreamReader(
+new FileInputStream("myfile.xml"), "UTF-8"))
+val root4 = XML.load(new URL("http://horstmann.com/index.html"))
+```
+
+## Future
