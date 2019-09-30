@@ -749,7 +749,6 @@ Future {
 println(s"This is the present at ${LocalTime.now}")
 ```
 
-
 - 监听结果（阻塞）
 
 ```scala
@@ -766,10 +765,10 @@ t match {
     case Failure(ex) => println(ex.getMessage)
 }
 ```
-> ready() 
+
+> ready()
 > - 到达等待时间无结果时，会抛出异常 `TimeoutException`
 > - 任务抛出的异常时，result() 会再次抛出异常， ready() 可获取结果
-
 
 - 回调
 
@@ -812,3 +811,57 @@ val future2 = Future { getData2() }
 // 都获取到结果时，才会进行计算
 val combined = for (n1 <- future1; n2 <- future2) yield n1 + n2
 ```
+
+- Promise
+  - 与 Java 8 中的 `CompletableFuture` 类似
+  - Future 只读，在任务完成时隐式设置结果值；Promise 类似，但结果值可显式设置
+  ```scala
+  // Future
+  def computeAnswer(arg: String) = Future {
+    val n = workHard(arg)
+    n
+  }
+
+  // Promise
+  def computeAnswer(arg: String) = {
+    val p = Promise[Int]()
+    Future {
+      val n = workHard(arg)
+      // 显式设置结果
+      p.success(n)
+      workOnSomethingElse()
+    }
+    // 立即返回该 Promise 对应的 Future
+    p.future
+  }
+
+  // 多个任务对应一个 Promise
+  val p = Promise[Int]()
+  Future {
+    var n = workHard(arg)
+    // 若 Promise 未完成则接受结果并返回 true；否则忽略结果并返回 false
+    p.trySuccess(n)
+  }
+  Future {
+    var n = workSmart(arg)
+    p.trySuccess(n)
+  }
+  ```
+
+- 执行上下文
+  - 默认执行在全局的 `fork-join` 线程池（默认大小为核数），适用于计算密集型任务
+  - 对于阻塞型/IO密集型的任务，可使用 Java 的 `Executors`
+
+  ```
+    // 隐式声明，或者使用 Future.apply 显式声明
+    val pool = Executors.newCachedThreadPool()
+    implicit val ec = ExecutionContext.fromExecutor(pool)
+
+    val f = Future {
+    val url = ...
+    blocking {
+      val contents = Source.fromURL(url).mkString
+      ...
+    }
+    }
+  ```
