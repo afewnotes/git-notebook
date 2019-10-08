@@ -59,10 +59,10 @@
   * 不像其他语言那么常用，通常可使用单个方法调用完成所有操作
   * while, do
   * 没有与 Java 类似的 for 循环 `for(init; test; update)`，可使用 while 代替，或者使用 for 表达式
-    * `for (i <- 1 to 10) r = r * i`
-    * 生成器 `variable <- expression` 会遍历所有元素
+    * `for (i <* 1 to 10) r = r * i`
+    * 生成器 `variable <* expression` 会遍历所有元素
     * for 循环可包含多个生成器，逗号分隔（或换行区分），可使用 parttern guard 来进行条件过滤
-      * `for(v <- exp1; v2 <- exp2 if(condition)) doSome()` // if 之前的分号可省略
+      * `for(v <* exp1; v2 <* exp2 if(condition)) doSome()` // if 之前的分号可省略
     * for 语句中的变量不需要声明 val 或 var，其类型与迭代的集合中元素类型一致
     * `1 to n` 包含上界，`1 until n` 不包含上界
   * 没有 break，continue 表达式来中断循环，替代方案：
@@ -82,10 +82,10 @@
 
   * yield，在 for 循环体以 yield 开始的形式成为 for 推导式
     * 产生的结果为每次迭代的值的集合
-      * `for(i <- 1 to 3) yield i % 3` // Vector(1, 2, 0)
+      * `for(i <* 1 to 3) yield i % 3` // Vector(1, 2, 0)
     * 生成的集合与第一个生成器类型一致
-      * `for(c <- "hello"; i <- 0 to 1) yield (c+i).toChar` // hieflmlmop
-      * `for(i <- 0 to 1; c <- "hello") yield (c+i).toChar` // Vector(h, e, l, l, o, i, f, m, m, p)
+      * `for(c <* "hello"; i <* 0 to 1) yield (c+i).toChar` // hieflmlmop
+      * `for(i <* 0 to 1; c <* "hello") yield (c+i).toChar` // Vector(h, e, l, l, o, i, f, m, m, p)
 
 * 函数
 
@@ -95,7 +95,7 @@
   * `def abs(x: Double) = if (x >= 0) x else -x`
   * 必须指定所有参数的类型；返回值为`=`右边的表达式或语句块的最后一个表达式的结果；可省略 `return`
   * 如果是递归函数，则必须指明返回类型
-    * `def fac(n: Int): Int = if (n <= 0) 1 else n * fac(n - 1)`
+    * `def fac(n: Int): Int = if (n <= 0) 1 else n * fac(n * 1)`
   * 参数默认值和命名参数
     * `def decorate(str: String, left: String = "[", right: String = "]") = left + str + right`
     * 调用时可给部分参数，也可给全部参数，还可通过命名参数传值而不考虑参数顺序
@@ -103,7 +103,7 @@
       * `decorate("a", "<<")` // <<a]
       * `decorate(left="<", "a")` // <a
   * 可变参数（本质上是一个 Seq 类型的参数）
-    * `def sum(args: Int*) ={var result=0; for (a <- args) result += a; result}`
+    * `def sum(args: Int*) ={var result=0; for (a <* args) result += a; result}`
     * `sum(1,2,3)` // 6
     * `sum(1 to 5: _*)` // 15 当传递序列做为参数时，需要添加 `_*` 告诉编译器传入的为参数序列， 而不是 Int
 
@@ -154,8 +154,8 @@
   * `arr.toBuffer`, `buf.toArray`
 * 初始化是不要使用 `new`
 * 使用 `()` 访问元素
-* 使用 `for (elem <- arr)` 遍历元素；倒序 `arr.reverse`
-* 使用 `for (elem <- arr if ...) ... yield ...` 转换为新的数组
+* 使用 `for (elem <* arr)` 遍历元素；倒序 `arr.reverse`
+* 使用 `for (elem <* arr if ...) ... yield ...` 转换为新的数组
   * 等价于 `arr.filter(...).map(...)` 或者更简洁 `arr filter { ... } map {...}`
 * 与 Java 的数组通用，如果是 `ArrayBuffer`， 可配合 `scala.collection.JavaConversions` 使用
 * 在做任何操作前都会转换为 `ArrayOps` 对象
@@ -179,8 +179,8 @@
     * 删除元素 `scores -= "a"`
   * immutable 不可更新，修改时会产生新的 Map， 但公共部分的元素数据是共享的
     * 添加元素会产生新的 Map，`scores + ("d" -> 70, "e" -> 50)`
-    * 删除元素产生新的 Map `scores - "a"`
-  * 遍历 `for((k,v) <- map) ...`
+    * 删除元素产生新的 Map `scores * "a"`
+  * 遍历 `for((k,v) <* map) ...`
   * 排序 Map
     * 按照 key 排序存放 `scala.collection.immutable.SortedMap("d" -> 1, "b" -> 2, "c" -> 3)` // Map(b -> 2, c -> 3, d -> 1)
     * 按照插入顺序排放 `scala.collection.mutable.LinkedHashMap("d" -> 1, "b" -> 2, "c" -> 3)` // Map(d -> 1, b -> 2, c -> 3)
@@ -340,12 +340,12 @@
     * 设置执行目录/环境变量 `Process("ls -l", new File("../"), ("LANG", "en_US")).!`，环境变量为 `(k, v)` 序列
   * 在 Java 项目中执行 Scala 脚本 `ScriptEngine engine = new ScriptEngineManager().getScriptEngineByName("scala")`
 * 正则表达式
-    * 工具类 `scala.util.matching.Regex`
-    * 构造正则对象 `val pattern = "[0-9]+".r`
-      * 存在转义、引号等情况时使用 `"""`，`val pattern = """\s+[0-9]+\s+""".r`
-    * 捕获组使用括号表示 `val patternName = "([0-9]+) ([a-z]+)".r`
-      * 可定义正则变量作为提取器  `val pattern(num, item) = "123 abc"` (`patternName` 与定义的正则名一致)
-      * 也可在 for 循环中使用正则变量直接提取捕获组
+  * 工具类 `scala.util.matching.Regex`
+  * 构造正则对象 `val pattern = "[0-9]+".r`
+    * 存在转义、引号等情况时使用 `"""`，`val pattern = """\s+[0-9]+\s+""".r`
+  * 捕获组使用括号表示 `val patternName = "([0-9]+) ([a-z]+)".r`
+    * 可定义正则变量作为提取器  `val pattern(num, item) = "123 abc"` (`patternName` 与定义的正则名一致)
+    * 也可在 for 循环中使用正则变量直接提取捕获组
 
 ## Traits
 
@@ -402,6 +402,7 @@
     * `case class` 自动附带 `apply` 和 `unapply` 方法，在模式匹配中会自动调用
   * 提取任意序列值，需要包含 `unapplySeq` 方法，返回 `Option[Seq[Type]]`
     * ~~~**注意**，`unapply` 和 `unapplySeq` 的参数类型不要定义成一样的~~~
+
 * 动态调用 dynamic invocation
   * 定义动态类型
     * `import scala.language.dynamics`
@@ -475,12 +476,14 @@
   * `::` 根据给定 `head` 和 `tail` 构建新的 `List`
     * 右结合性，即从右侧开始调用 `1 :: 2 :: Nil` 等价于 `1 :: (2 :: Nil)` // 结果 `List(1,2)
   * 根据 `head`, `tail` 的特性，可很容易进行递归操作
+
     ```scala
     def multi(l: List[Int]): Int = l match {
       case Nil    => 1
       case h :: t => h * multi(t)
     }
     ```
+
   * 复杂度
     * 获取 `head`, `tail` 只需要常数时间 `O(1)`
     * 在头部添加元素也只需要常数时间 `O(1)`；可使用 `mutable.ListBuffer` 可在头部 或 尾部进行增/删元素操作
@@ -585,31 +588,37 @@
     * `Array` 的类型不会被擦除
 * 解构 destructuring
   * 匹配数组
+
     ```scala
     case Array(x, y) => s"$x $y"  // 匹配长度为2的数组，并将分别绑定到 x, y
     case Array(0, rest @ _*) => rest.min // 可变参数
     ```
+
   * 匹配 `List`
+
     ```scala
     case x :: y :: Nil => ...  // 绑定参数
     case head :: tail => ...  // 解构 head , tail
     ```
+
   * 匹配元组
+  
     ```scala
     case (0, _) => ... // 匹配第一个元素为0
     case (x, y) => ... // 绑定参数
     ```
+
 * 定义变量，**注意一定要小写开头**；其实等价于 `match` 模式匹配加上赋值操作
   * `val (x, y) = (1, 2)`
   * `val Array(f, s, rest @ _*) = arr`
 * 用于 `for` 循环遍历集合，匹配符合条件的元素
 
   ```scala
-  for ((k, v) <- System.getProperties()) println(s"$k $v")
+  for ((k, v) <* System.getProperties()) println(s"$k $v")
   // 匹配 value 为 "" 的项，其他的则被忽略
-  for ((k, "") <- System.getProperties()) println(k)
+  for ((k, "") <* System.getProperties()) println(k)
   // if guard 过滤
-  for ((k, v) <- System.getProperties() if v == "") println(k)
+  for ((k, v) <* System.getProperties() if v == "") println(k)
   ```
 
 * Case Class
@@ -685,9 +694,9 @@
   
 * `Scala` 中的 `Node` 与 `DOM` 不同，不包含父节点信息
 * 层级
-![](imgs/xml.png)
+![层级](imgs/xml.png)
 * 操作
-![](imgs/Elem.png)
+![操作](imgs/Elem.png)
 
 ```scala
 // 类 XPath
@@ -708,7 +717,7 @@ val image2 = image % Attribute(null, "alt", "An image of a hamster", Null)
 
 ```scala
 <ul><li>{items(0)}</li><li>{items(1)}</li></ul>
-<ul>{for (i <- items) yield <li>{i}</li>}</ul>
+<ul>{for (i <* items) yield <li>{i}</li>}</ul>
 <img src={makeURL(fileName)}/> // 注意不需要双引号
 // 非常规类型
 val js = <script><![CDATA[if (temp < 0) alert("Cold!")]]></script>
@@ -718,8 +727,9 @@ val js = <script><![CDATA[if (temp < 0) alert("Cold!")]]></script>
 
 ```scala
 case <li>{Text(item)}</li> => item
-case <li>{children @ _*}</li> => for (c <- children) yield c
+case <li>{children @ _*}</li> => for (c <* children) yield c
 ```
+
 > 只能使用单个 `Node` 进行匹配
 
 * 加载、保存文件
@@ -736,7 +746,8 @@ XML.save("myfile.xml", root)
 ```
 
 ## Future
-- [`scala.concurrent.Future`](https://www.scala-lang.org/api/current/scala/concurrent/Future.html) 异步执行代码块
+
+* [`scala.concurrent.Future`](https://www.scala-lang.org/api/current/scala/concurrent/Future.html) 异步执行代码块
 
 ```scala
 import java.time._
@@ -749,7 +760,7 @@ Future {
 println(s"This is the present at ${LocalTime.now}")
 ```
 
-- 监听结果（阻塞）
+* 监听结果（阻塞）
 
 ```scala
 import scala.concurrent.duration._
@@ -767,10 +778,11 @@ t match {
 ```
 
 > ready()
-> - 到达等待时间无结果时，会抛出异常 `TimeoutException`
-> - 任务抛出的异常时，result() 会再次抛出异常， ready() 可获取结果
+>
+> * 到达等待时间无结果时，会抛出异常 `TimeoutException`
+> * 任务抛出的异常时，result() 会再次抛出异常， ready() 可获取结果
 
-- 回调
+* 回调
 
 ```scala
 val f = Future { 
@@ -784,7 +796,7 @@ f.onComplete {
 }
 ```
 
-- 问题：1.回调地狱；2.执行顺序无法预知
+* 问题：1.回调地狱；2.执行顺序无法预知
 
 ```scala
 val future1 = Future { getData1() }
@@ -809,12 +821,13 @@ future1 onComplete {
 val future1 = Future { getData1() }
 val future2 = Future { getData2() }
 // 都获取到结果时，才会进行计算
-val combined = for (n1 <- future1; n2 <- future2) yield n1 + n2
+val combined = for (n1 <* future1; n2 <* future2) yield n1 + n2
 ```
 
-- Promise
-  - 与 Java 8 中的 `CompletableFuture` 类似
-  - Future 只读，在任务完成时隐式设置结果值；Promise 类似，但结果值可显式设置
+* Promise
+  * 与 Java 8 中的 `CompletableFuture` 类似
+  * Future 只读，在任务完成时隐式设置结果值；Promise 类似，但结果值可显式设置
+  
   ```scala
   // Future
   def computeAnswer(arg: String) = Future {
@@ -848,11 +861,11 @@ val combined = for (n1 <- future1; n2 <- future2) yield n1 + n2
   }
   ```
 
-- 执行上下文
-  - 默认执行在全局的 `fork-join` 线程池（默认大小为核数），适用于计算密集型任务
-  - 对于阻塞型/IO密集型的任务，可使用 Java 的 `Executors`
+* 执行上下文
+  * 默认执行在全局的 `fork-join` 线程池（默认大小为核数），适用于计算密集型任务
+  * 对于阻塞型/IO密集型的任务，可使用 Java 的 `Executors`
 
-  ```
+  ```scala
     // 隐式声明，或者使用 Future.apply 显式声明
     val pool = Executors.newCachedThreadPool()
     implicit val ec = ExecutionContext.fromExecutor(pool)
@@ -865,3 +878,127 @@ val combined = for (n1 <- future1; n2 <- future2) yield n1 + n2
     }
     }
   ```
+
+## 类型参数
+
+* 表现形式：在名称后面以方括号表示， `Array[T]`
+* 何处使用
+  * class 中，用于定义变量、入参、返回值
+
+    ```scala
+    class Pair[T, S](val first: T, val second: S)
+    // scala 可自动推断具体的类型
+    val p = new Pair(42, "String") // Pair[Int, String]
+    ```
+
+  * 函数、方法
+
+    ```scala
+    def getMiddle[T](a: Array[T]) = a(a.length / 2)
+    ```
+  
+* 类型边界
+
+  * 上边界 `T <: UpperBound`
+  
+    ```scala
+    // 比较大小
+    class Pair[T](val first: T, val second: T) {
+      def smaller = if (first.compareTo(second) < 0) first else second  
+    }
+    ```
+
+    > 无法确定 first 是否存在 `compareTo` 方法，所以必须添加约束，fist 必须是 `Comparable` 的子类型，即需要添加上边界
+
+    ```scala
+    class Pair[T <: Comparable[T]](val first: T, val second: T) {
+      def smaller = if (first.compareTo(second) < 0) first else second
+    }
+    ```
+
+  * 下边界 `T >: LowerBound`
+
+    ```scala
+    // 替换第一个元素
+    class Pair[T](val first: T, val second: T) {
+      def replaceFirst(newFirst: T) = new Pair[T](newFirst, second)
+    }
+    ```
+  
+    > 替换第一个元素为 T 的父类 R，那么返回类型是什么？ 如果需要返回 R，则需要添加约束，即需要下边界；否则返回的类型为 Any
+
+    ```scala
+    // 返回类型自动推断为 new Pair[R]
+    def replaceFirst[R >: T](newFirst: R) = new Pair(newFirst, second)
+    ```
+
+  * 上下文边界 `T : ContextBound`
+
+    Scala 2.8 对 `Array` 进行了[更新优化](https://www.scala-lang.org/old/sid/7)，使用隐式转换和 manifest 将数组整合为 Scala 的集合库
+
+    ```scala
+    def tabulate[T](len: Int, f: Int => T)(implicitm: ClassManifest[T]) = {
+      val xs = new Array[T](len)
+      for(i <- 0 until len) xs(i) = f(i)
+      xs
+    }
+
+    // 简化后
+    def tabulate[T: ClassManifest](len: Int, f: Int => T) = {
+      val xs = new Array[T](len)
+      for(i <- 0 until len) xs(i) = f(i)
+      xs
+    }
+    ```
+
+    * `ClassTag`， 指定运行时的类型，如 `Array[Int]` 在运行时想指定为 int[]
+  
+      ```scala
+      import scala.reflect._
+      def makePair[T : ClassTag](first: T, second: T) = {
+        val r = new Array[T](2); r(0) = first; r(1) = second; r
+      }
+
+      makePair(4, 9)
+
+      // 实际调用
+      makePair(4, 9)(classTag)
+
+      // new 操作，即 ClassTag[Int] 构建原始类型数组 int[2]
+      classTag.newArray
+      ```
+
+  * 多个边界
+    * 可同时添加上界和下界 `T >: Lower <: Upper`
+    * 不可添加多个上界或多个下届，但可实现多个 `trait`, 
+      * `T <: Comparable[T] with Serializable with Cloneable`
+    * 可指定多个上下文边界 `T : Ordering : ClassTag`
+
+* 类型约束
+  * 测试是否相等 `T =:= U`
+  * 测试是否为子类 `T <:< U`
+  * 测试是否可转换 `T => U`
+
+  要添加该约束，需添加隐式参数
+  
+  ```scala
+  // 约束类
+  class Pair[T](val first: T, val second: T)(implicit ev: T <:< Comparable[T])
+
+  // 约束方法调用，只有类型满足才能调用成功，否则报错
+  class Pair[T](val first: T, val second: T) {
+    def smaller(implicit ev: T <:< Ordered[T]) =
+      if (first < second) first else second
+  }
+
+  // 便于类型推断
+  def firstLast[A, C <: Iterable[A]](it: C) = (it.head, it.last)
+  // 无法推断类型 A
+  firstLast(List(1, 2, 3)) // [Nothing, List[Int]]
+  // 添加约束关系
+  def firstLast[A, C](it: C)(implicit ev: C <:< Iterable[A]) = (it.head, it.last)
+  ```
+
+* 类型关系
+  * 协变 `+T`, 适用于标识输出，如不可变集合中的元素
+  * 逆变 `-T`，适用于标识输入，如函数的入参
