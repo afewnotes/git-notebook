@@ -1074,3 +1074,66 @@ val combined = for (n1 <* future1; n2 <* future2) yield n1 + n2
       printMyCat(animalPrinter) // 将 Printer[Animal] 当作 Printer[Cat] 使用
     }
     ```
+
+## 高级类型
+
+在 Scala 中所有值都有一种对应的类型
+
+* 单例类型
+  * 形式：`value.type`，返回类型 `value` / `null`
+  * 场景1：链式API调用时的类型指定
+
+    ```scala
+    class Super {
+      def m1(t: Int) = {println(t); this}
+      def m2(t: Int) = {println(t); this}
+    }
+    // 正常打印
+    new Super().m1(1).m2(2)
+    
+    class Child extends Super {
+      def c1(t: Int) = {println(t); this}
+    }
+
+    // 异常  value c1 is not a member of Super
+    new Child().m1(1).c1(2)
+    ```
+
+    > 由于 Scala 会将 `this` 推断为当前类（即 `Super`），因此无法完成链式调用
+
+    ```scala
+    class Super {
+      // 指定返回类型为调用方的 this 
+      def m1(t: Int): this.type = {println(t); this}
+      def m2(t: Int): this.type = {println(t); this}
+    }
+
+    class Child extends Super {
+      def c1(t: Int) = {println(t); this}
+    }
+
+    // 成功打印
+    new Child().m1(1).c1(2)
+    ```
+
+  * 场景2：方法中使用 `object` 实例作为参数
+  
+    ```scala
+    object Foo
+    class Child extends Super {
+      def c1(obj: Foo.type) = {
+        if (obj == Foo) println("foo")
+        this
+      }
+    }
+    ```
+
+    > Note：不可定义为 ~~def c1(obj: Foo)~~，因为 Foo 为单例对象，而不是类型
+
+* 类型投影
+  * 形式：`Outter#Inner`
+  * 场景：内部类使用时避免类型约束
+
+  ```scala
+  
+  ```
