@@ -1236,3 +1236,18 @@ val combined = for (n1 <* future1; n2 <* future2) yield n1 + n2
   ```scala
   Shape with Serializable { def contains(p: Point): Boolean }
   ```
+
+### 中缀类型
+
+* 其实只是一种语法写法，如 `String Map Int` 可代替 `Map[String, Int]`
+* 可参考数学运算中的表达方式
+  
+  ```scala
+  type x[A, B] = (String, Int)
+  // 即可使用 String x Int 来表示 (String, Int)
+  ```
+
+* 一般中缀类型操作符都是左关联的，除了前面提到的 `:` 操作符，这个是右关联的，比如 `List` 的操作
+
+> 中缀类型名称可以是任意操作符，除了 `*`，避免与类型定义冲突
+
