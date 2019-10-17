@@ -1079,61 +1079,160 @@ val combined = for (n1 <* future1; n2 <* future2) yield n1 + n2
 
 在 Scala 中所有值都有一种对应的类型
 
-* 单例类型
-  * 形式：`value.type`，返回类型 `value` / `null`
-  * 场景1：链式API调用时的类型指定
+### 单例类型
 
-    ```scala
-    class Super {
-      def m1(t: Int) = {println(t); this}
-      def m2(t: Int) = {println(t); this}
-    }
-    // 正常打印
-    new Super().m1(1).m2(2)
-    
-    class Child extends Super {
-      def c1(t: Int) = {println(t); this}
-    }
-
-    // 异常  value c1 is not a member of Super
-    new Child().m1(1).c1(2)
-    ```
-
-    > 由于 Scala 会将 `this` 推断为当前类（即 `Super`），因此无法完成链式调用
-
-    ```scala
-    class Super {
-      // 指定返回类型为调用方的 this 
-      def m1(t: Int): this.type = {println(t); this}
-      def m2(t: Int): this.type = {println(t); this}
-    }
-
-    class Child extends Super {
-      def c1(t: Int) = {println(t); this}
-    }
-
-    // 成功打印
-    new Child().m1(1).c1(2)
-    ```
-
-  * 场景2：方法中使用 `object` 实例作为参数
-  
-    ```scala
-    object Foo
-    class Child extends Super {
-      def c1(obj: Foo.type) = {
-        if (obj == Foo) println("foo")
-        this
-      }
-    }
-    ```
-
-    > Note：不可定义为 ~~def c1(obj: Foo)~~，因为 Foo 为单例对象，而不是类型
-
-* 类型投影
-  * 形式：`Outter#Inner`
-  * 场景：内部类使用时避免类型约束
+* 形式：`value.type`，返回类型 `value` / `null`
+* 场景1：链式API调用时的类型指定
 
   ```scala
+  class Super {
+    def m1(t: Int) = {println(t); this}
+    def m2(t: Int) = {println(t); this}
+  }
+  // 正常打印
+  new Super().m1(1).m2(2)
   
+  class Child extends Super {
+    def c1(t: Int) = {println(t); this}
+  }
+
+  // 异常  value c1 is not a member of Super
+  new Child().m1(1).c1(2)
+  ```
+
+  > 由于 Scala 会将 `this` 推断为当前类（即 `Super`），因此无法完成链式调用
+
+  ```scala
+  class Super {
+    // 指定返回类型为调用方的 this 
+    def m1(t: Int): this.type = {println(t); this}
+    def m2(t: Int): this.type = {println(t); this}
+  }
+
+  class Child extends Super {
+    def c1(t: Int) = {println(t); this}
+  }
+
+  // 成功打印
+  new Child().m1(1).c1(2)
+  ```
+
+* 场景2：方法中使用 `object` 实例作为参数
+
+  ```scala
+  object Foo
+  class Child extends Super {
+    def c1(obj: Foo.type) = {
+      if (obj == Foo) println("foo")
+      this
+    }
+  }
+  ```
+
+  > Note：不可定义为 ~~def c1(obj: Foo)~~，因为 Foo 为单例对象，而不是类型
+
+### 类型投影
+
+* 形式：`Outer#Inner`
+* 场景：内部类使用时避免类型约束
+
+  ```scala
+  class Outer {
+    private val inners = ArrayBuffer[Inner]()
+
+    class Inner (val arg1: Int) {
+      val l = ArrayBuffer[Inner]()
+    }
+
+    def add(a: Int) = {
+      val t = new Inner(a)
+      inners += t
+      t
+    }
+  }
+
+  val a = new Outer
+  val b = new Outer
+
+  val a1 = a.add(1)
+  val b1 = b.add(1)
+  a1.l += b1 // error: type mismatch;
+  ```
+
+  > 只需要在定义内部类时指定类型投影即可解决
+
+  ```scala
+  // 表示适用于任何 Outer 类的 Inner 类
+  val l = ArrayBuffer[Outer#Inner]()
+  ```
+
+  > 如果将上述例子改用 `List` 来实现，并不会报错，计算结果也会自动进行类型投射
+
+### 路径
+
+* 路径中除最后一部分外，都必须是稳定状态的，如包名、`object`、`val`、`this/super/super[S]...`
+* 不能包含 `var` 类型
+
+  ```scala
+  var t = new Outer()
+  //...其他操作
+  val i = new t.Inner // 由于 t 可能会变更，编译器无法确定其含义
+  ```
+
+  > a.b.c.T 内部被翻译成类型投射 a.b.c.type#T
+
+### 类型别名
+
+* 形式： `type SomeAliasName`
+* 必须定义在 `class` 或 `object` 内部
+* 好处： 在引用类型时可以更加简洁
+
+  ```scala
+  class Book {
+    import scala.collection.mutable._
+    // 为该类型取一个别名
+    type Index = HashMap[String, Int]
+    
+    // 使用时不在需要重复的定义复杂的数据类型
+    val map: Index = new Index()
+  }
+
+  new Book().map  // scala.collection.mutable.HashMap[String,Int]
+  ```
+
+### 结构类型
+
+* 为抽象方法、字段、类型的定义某种规范
+
+  ```scala
+  def appendLines(target: { def append(str: String): Any },
+    lines: Iterable[String]) {
+    for (l <- lines) { 
+      // 此次 Scala 使用反射调用该方法
+      target.append(l); 
+      target.append("\n") 
+    }
+  }
+  ```
+  
+  该方法第一个参数 `target` 即结构类型，表示使用任何包含该 `append` 方法的实例作为参数传入。
+
+  > 由于反射的代价较大，不到万不得已不建议使用，如，有通用行为(`append`)，却无法共享 `trait`
+
+### 组合类型 / 交集类型
+
+* 形式： `T1 with T2 with T3 ...`
+* 当需要提供多个特质时使用，即用于约束类型
+
+  ```scala
+  val image = new ArrayBuffer[java.awt.Shape with java.io.Serializable]
+  val rect = new Rectangle(5, 10, 20, 30)
+  image += rect // 正确，Rectangle 可序列化
+  image += new Area(rect) // 错误 Area 不可序列化
+  ```
+
+* 组合类型中也可使用结构类型
+
+  ```scala
+  Shape with Serializable { def contains(p: Point): Boolean }
   ```
