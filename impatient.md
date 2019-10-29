@@ -1251,3 +1251,70 @@ val combined = for (n1 <* future1; n2 <* future2) yield n1 + n2
 
 > 中缀类型名称可以是任意操作符，除了 `*`，避免与类型定义冲突
 
+### 存在类型
+
+* 形式： `forSome { type ... }` 或 `forSome { val ... }`
+* 主要为了兼容 Java 的通配符
+* 示例
+
+  ```scala
+  Array[_]
+  // 等价于
+  Array[T] forSome { type T}
+
+  Map[_, _]
+  // 等价于
+  Map[T, U] forSome { type T; type U <: T}
+  ```
+
+### 类型系统
+
+|类型|语法|
+|---:|:---|
+|Class/Trait| `class C`, `trait T`|
+|元组|`(T1, T2...)`|
+|函数|`(P1, P2...) => T`|
+|注解|`T @A`|
+|参数类型|`A[T1, T2...]`|
+|单例类型|`value.type`|
+|类型投射|`O#I`|
+|组合类型|`T1 with T2 ...`|
+|中缀类型|`T1 A T2`|
+|存在类型|`T forSome { type/val... }`|
+
+> 以上类型可在编写程序时定义，Scala 也有少量的类型在编译器内部使用
+
+```scala
+def square(x: Int) = x * x
+// REPL 中返回的类型为
+// square(x: Int) Int 
+// 省略的方法定义的 => 
+```
+
+### 自身类型 self type
+
+* 形式：`this: Type =>`
+* 用于限制 `trait` 只能被混编于指定类型的子类中
+
+```scala
+trait T1 { def m1()}
+
+trait T2 extends T1 {
+  this: Super1 with Super2 =>
+    def m1() { methodInSuper() }
+}
+
+// 使用时只能在 Super1,Super2 的子类中混编 with T2
+```
+
+* 引入的问题：自身类型不会自动继承，必须在子类中重复定义
+
+```scala
+trait T3 extends T2 {
+  this: Super1 with Super2 => // 必须重复定义
+}
+```
+
+### 依赖注入
+
+
