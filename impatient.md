@@ -1317,4 +1317,91 @@ trait T3 extends T2 {
 
 ### 依赖注入
 
+* 通过 `trait` 和 自身类型 实现简单的以来注入
+  * 需要将所有的依赖都组合起来
+
+  ```scala
+  trait Logger { def log(msg: String) }
+
+  trait Auth {
+    this: Logger =>
+      def login(id: String, password: String): Boolean
+  }
+
+  trait App {
+    this: Logger with Auth =>
+    // ...
+  }
+
+  object MyApp extends App with FileLogger("test.log") with MockAuth("users.txt")
+  ```
+
+* 蛋糕模式 (`cake pattern`) 实现依赖注入
+  * 依赖的组件使用自身类型来表示
+  * `trait` 描述服务接口
+  * `val` 定义需要实例化的服务  
+  * 层级化组合各个组件，在一个整体中注入需要的组件
+
+  ```scala
+  // 定义组件1
+  trait LoggerComponent {
+    // 描述接口
+    trait Logger { ... }
+    // 需要实例化的服务
+    val logger: Logger
+    // 接口具体实现
+    class FileLogger(file: String) extends Logger { ... }
+    ...
+  } 
+
+  // 定义组件2
+  trait AuthComponent {
+    // 自身类型限定混编使用的类型
+    this: LoggerComponent => // Gives access to logger
+    // 定义服务接口
+    trait Auth { ... }
+    // 需要实例化的服务
+    val auth: Auth
+    // 接口具体实现
+    class MockAuth(file: String) extends Auth { ... }
+    ...
+  }
+  // 所有的依赖都集中在一处进行配置/注入
+  object AppComponents extends LoggerComponent with AuthComponent {
+    // 实例化服务/注入
+    val logger = new FileLogger("test.log")
+    val auth = new MockAuth("users.txt")
+  }
+  ```
+  
+  > [Scala编程的蛋糕模式和依赖注入](https://colobu.com/2015/07/28/Scala-Cake-pattern-and-Dependency-Injection/)
+
+### 抽象类型
+
+* 形式： `type Name`
+* 在 `class` 或 `trait` 中定义
+* 场景：具体类型需要在子类中确定
+
+  ```scala
+  trait Reader {
+    type Contents
+    def read(fileName: String): Contents
+  }
+  // 子类实现是具体确定类型
+  class StringReader extends Reader {
+    type Contents = String
+    def read(fileName: String) = ...
+  } 
+
+  class ImageReader extends Reader {
+    type Contents = BufferedImage
+    def read(fileName: String) = ...
+  }
+  ```
+
+* 抽象类型、类型参数的使用选择
+  * 在类实例化时需要具体确认类型的场景使用类型参数，如 `HashMap[String, Int]`
+  * 期望子类提供具体类型的场景使用抽象类型，如上例中的 `Reader`
+
+### 家族多态
 
