@@ -1403,5 +1403,12 @@ trait T3 extends T2 {
   * 在类实例化时需要具体确认类型的场景使用类型参数，如 `HashMap[String, Int]`
   * 期望子类提供具体类型的场景使用抽象类型，如上例中的 `Reader`
 
-### 家族多态
+## 隐式转换
 
+* 隐式转换函数形式，使用 `implicit` 修饰，只有一个参数
+
+  ```scala
+  implicit def anyName(p: T) = ...
+  ```
+
+* enrich
